@@ -32,8 +32,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y k6
 
-      - name: Ejecutar pruebas K6
-        run: k6 run load-test.js --out json=results.json
+      - name: Ejecutar pruebas K6 y enviar a Grafana Cloud
+        run: k6 run load-test.js -o cloud
+        env:
+          K6_CLOUD_TOKEN: ${{ secrets.GRAFANA_TOKEN }}
 
       - name: Subir resultados como artefacto
         uses: actions/upload-artifact@v4
