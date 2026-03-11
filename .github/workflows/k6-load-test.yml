@@ -23,8 +23,8 @@ jobs:
       - name: Ejecución de Escáner SonarQube
         uses: SonarSource/sonarqube-scan-action@master
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.TOKEN_SONARQUBE }}
+          SONAR_HOST_URL: ${{ secrets.URL_SONARQUBE }}
         with:
           args: >
             -Dsonar.projectKey=mi-proyecto-gestion-sw
