@@ -1,17 +1,50 @@
-name: K6 Load Tests
+name: CI Pipeline - Calidad, Seguridad y Carga
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  k6-test:
+  # JOB 1: ANÁLISIS SAST CON SONARQUBE
+  sonarQube-analysis:
+    name: Análisis de Calidad de Código
     runs-on: ubuntu-latest
+    steps:
+      - name: Clonación del repositorio (Checkout)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
+      - name: Ejecución de Escáner SonarQube
+        uses: SonarSource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.projectKey=mi-proyecto-gestion-sw
+            -Dsonar.qualitygate.wait=true
+
+  # JOB 2: PRUEBAS DE CARGA CON K6
+  k6-test:
+    name: Pruebas de Carga K6
+    runs-on: ubuntu-latest
+    # Este job se ejecutará solo si el análisis de SonarQube pasa (opcional)
+    needs: sonarQube-analysis 
+    
     steps:
       - name: Checkout código
         uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
 
       - name: Instalar dependencias Node
         run: npm install
@@ -20,7 +53,7 @@ jobs:
         run: npm start &
 
       - name: Esperar que el servidor arranque
-        run: sleep 5
+        run: sleep 10 # Aumentado a 10s para asegurar que el servidor esté listo
 
       - name: Instalar K6
         run: |
@@ -32,12 +65,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y k6
 
-      - name: Ejecutar pruebas K6 y enviar a Grafana Cloud
-        run: k6 run load-test.js -o cloud
+      - name: Ejecutar pruebas K6 y generar reporte JSON
+        run: |
+          k6 run load-test.js --out json=results.json -o cloud
         env:
           K6_CLOUD_TOKEN: ${{ secrets.GRAFANA_TOKEN }}
 
       - name: Subir resultados como artefacto
+        if: always() # Se sube incluso si las pruebas fallan
         uses: actions/upload-artifact@v4
         with:
           name: k6-results
