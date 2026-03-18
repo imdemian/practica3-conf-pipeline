@@ -5,11 +5,15 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --production
 
-COPY . .
+# Copiar solo las carpetas necesarias de la app
+COPY app.js .
+COPY bin/ bin/
+COPY routes/ routes/
+COPY public/ public/
+COPY lib/ lib/
 
 EXPOSE 3000
 
-# Crear usuario no-root para mayor seguridad
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
