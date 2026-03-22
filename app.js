@@ -7,6 +7,44 @@ var indexRouter = require('./routes/index')
 var usersRouter = require('./routes/users')
 var itemsRouter = require('./routes/items')
 
+const client = require('prom-client');
+
+// Métricas por defecto de Node.js
+client.collectDefaultMetrics();
+
+// Contador de peticiones HTTP
+const httpRequestCounter = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Total de peticiones HTTP procesadas',
+  labelNames: ['metodo', 'ruta', 'estado_http'],
+});
+
+// Gauge de usuarios activos
+const activeUsersGauge = new client.Gauge({
+  name: 'active_users_current',
+  help: 'Número actual de usuarios activos simulados'
+});
+
+// Endpoint /metrics para Prometheus
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', client.register.contentType);
+  res.send(await client.register.metrics());
+});
+
+// Middleware para contar peticiones
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    httpRequestCounter.inc({
+      metodo: req.method,
+      ruta: req.path,
+      estado_http: res.statusCode.toString(),
+    });
+  });
+  // Simular usuarios activos aleatorios
+  activeUsersGauge.set(Math.floor(Math.random() * 100));
+  next();
+});
+
 var app = express()
 
 app.use(logger('dev'))
