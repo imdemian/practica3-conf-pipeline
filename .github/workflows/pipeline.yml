@@ -52,10 +52,16 @@ jobs:
         run: npm install
 
       - name: Iniciar servidor en background
-        run: npm start &
+        run: node ./bin/www &
 
       - name: Esperar que el servidor arranque
-        run: sleep 10
+        run: |
+          echo "Esperando servidor..."
+          for i in {1..15}; do
+            curl -s http://localhost:3000/health && break
+            echo "Intento $i..."
+            sleep 2
+          done
 
       - name: Instalar K6
         run: |
