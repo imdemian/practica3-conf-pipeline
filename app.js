@@ -2,34 +2,35 @@ var express = require('express')
 var path = require('path')
 var cookieParser = require('cookie-parser')
 var logger = require('morgan')
+const client = require('prom-client')
 
 var indexRouter = require('./routes/index')
 var usersRouter = require('./routes/users')
 var itemsRouter = require('./routes/items')
 
-const client = require('prom-client');
+var app = express()
 
 // Métricas por defecto de Node.js
-client.collectDefaultMetrics();
+client.collectDefaultMetrics()
 
 // Contador de peticiones HTTP
 const httpRequestCounter = new client.Counter({
   name: 'http_requests_total',
   help: 'Total de peticiones HTTP procesadas',
   labelNames: ['metodo', 'ruta', 'estado_http'],
-});
+})
 
 // Gauge de usuarios activos
 const activeUsersGauge = new client.Gauge({
   name: 'active_users_current',
   help: 'Número actual de usuarios activos simulados'
-});
+})
 
-// Endpoint /metrics para Prometheus
-app.get('/metrics', async (req, res) => {
-  res.set('Content-Type', client.register.contentType);
-  res.send(await client.register.metrics());
-});
+app.use(logger('dev'))
+app.use(express.json())
+app.use(express.urlencoded({ extended: false }))
+app.use(cookieParser())
+app.use(express.static(path.join(__dirname, 'public')))
 
 // Middleware para contar peticiones
 app.use((req, res, next) => {
@@ -38,20 +39,17 @@ app.use((req, res, next) => {
       metodo: req.method,
       ruta: req.path,
       estado_http: res.statusCode.toString(),
-    });
-  });
-  // Simular usuarios activos aleatorios
-// NOSONAR - Pseudorandom is acceptable for metric simulation
-activeUsersGauge.set(Math.floor(Math.random() * 100)); // NOSONAR  next();
-});
+    })
+  })
+  activeUsersGauge.set(Math.floor(Math.random() * 100)) // NOSONAR
+  next()
+})
 
-var app = express()
-
-app.use(logger('dev'))
-app.use(express.json())
-app.use(express.urlencoded({ extended: false }))
-app.use(cookieParser())
-app.use(express.static(path.join(__dirname, 'public')))
+// Endpoint /metrics para Prometheus
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', client.register.contentType)
+  res.send(await client.register.metrics())
+})
 
 app.use('/', indexRouter)
 app.use('/users', usersRouter)
