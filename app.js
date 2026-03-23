@@ -41,8 +41,8 @@ app.use((req, res, next) => {
     });
   });
   // Simular usuarios activos aleatorios
-  activeUsersGauge.set(Math.floor(Math.random() * 100));
-  next();
+// NOSONAR - Pseudorandom is acceptable for metric simulation
+activeUsersGauge.set(Math.floor(Math.random() * 100)); // NOSONAR  next();
 });
 
 var app = express()
