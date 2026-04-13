@@ -13,20 +13,7 @@ jobs:
       - name: Checkout repositorio
         uses: actions/checkout@v4
 
-<<<<<<< HEAD
       - name: Copiar plantilla y ejecutar deploy
-=======
-      - name: Copiar plantilla al VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: "nginx/nginx.conf.template"
-          target: "/tmp/"
-
-      - name: Ejecutar deploy en VPS
->>>>>>> a5b35d31fa5be4f636360eb535c7874add397cdb
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
